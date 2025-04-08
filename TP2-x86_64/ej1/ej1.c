@@ -82,6 +82,7 @@ void string_proc_list_destroy(string_proc_list* list){
 	list->last  = NULL;
 	free(list);
 }
+
 void string_proc_node_destroy(string_proc_node* node){
 	node->next      = NULL;
 	node->previous	= NULL;
