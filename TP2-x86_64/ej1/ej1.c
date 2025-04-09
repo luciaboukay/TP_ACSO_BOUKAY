@@ -42,9 +42,6 @@ void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash)
 }
 
 char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash){
-	/*Genera un nuevo hash concatenando el pasado por parámetro con todos los hashes 
-	de los nodos de la lista cuyos tipos coinciden con el pasado por parámetro 
-	*/
 	string_proc_node* current_node = list->first;
 	char* new_hash = (char*)malloc(1);
 	new_hash[0] = '\0';
@@ -68,7 +65,6 @@ char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash)
 /** AUX FUNCTIONS **/
 
 void string_proc_list_destroy(string_proc_list* list){
-
 	/* borro los nodos: */
 	string_proc_node* current_node	= list->first;
 	string_proc_node* next_node		= NULL;
