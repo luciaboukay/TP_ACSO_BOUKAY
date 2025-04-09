@@ -47,8 +47,10 @@ string_proc_node_create_asm:
     push r15
     push r14
     mov rbp, rsp
-    mov r15, rdi
-    mov r14, rsi
+    
+    ; Guardamos argumentos pero usamos solo el byte bajo para type
+    movzx r15, dil         ; r15 = rdi (zero-extended de 8 bits a 64)
+    mov r14, rsi           ; r14 = hash (puntero de 64 bits)
 
     ; malloc(sizeof(string_proc_node)) → asumimos 32 bytes
     mov rdi, 32
@@ -57,14 +59,10 @@ string_proc_node_create_asm:
     test rax, rax
     je .return_null          ; si malloc devuelve NULL → return NULL
 
-    ; Argumentos de la función:
-    ; type está en rdi (registro de 8 bits, parte baja de rdi)
-    ; hash está en rsi
-
     ; Inicializamos los campos
     mov qword [rax], NULL        ; node->next = NULL
     mov qword [rax + 8], NULL    ; node->previous = NULL
-    mov byte  [rax + 16], r15    ; node->type = type (uint8_t)
+    mov byte [rax + 16], r15b    ; node->type = type (uint8_t) - CORREGIDO: usa r15b
     mov qword [rax + 24], r14    ; node->hash = hash
 
     ; Devolvemos el puntero al nodo en rax
@@ -89,33 +87,33 @@ string_proc_list_add_node_asm:
     sub rsp, 8
 
     ; Guardamos los argumentos en registros seguros
-    mov r15, rdi        ; list
-    mov r14, rsi        ; type (extiendo uint8_t a 64 bits)
-    mov r13, rdx        ; hash
+    mov r15, rdi               ; list
+    movzx r14, sil             ; type (extiendo uint8_t a 64 bits con zero-extension)
+    mov r13, rdx               ; hash
 
     ; Llamamos a string_proc_node_create_asm(type, hash)
-    mov rdi, r14        ; type → en rdi (como espera string_proc_node_create)
-    mov rsi, r13        ; hash → en rsi
+    mov dil, r14b              ; type → en dil (byte bajo de rdi)
+    mov rsi, r13               ; hash → en rsi
     call string_proc_node_create_asm
 
     test rax, rax
-    je .end             ; Si node == NULL, salir
+    je .end                    ; Si node == NULL, salir
 
     ; rax → puntero al nuevo nodo
     ; r15 → list
 
     ; Verificamos si list->first == NULL
-    mov rcx, [r15]      ; rcx = list->first
+    mov rcx, [r15]             ; rcx = list->first
     test rcx, rcx
-    je .empty_list      ; si es NULL, la lista está vacía
+    je .empty_list             ; si es NULL, la lista está vacía
 
 .not_empty:
     ; list->last->next = node
-    mov rdx, [r15 + 8]      ; rdx = list->last
-    mov [rdx], rax          ; rdx->next = node
+    mov rdx, [r15 + 8]         ; rdx = list->last
+    mov [rdx], rax             ; rdx->next = node
 
     ; node->previous = list->last
-    mov [rax + 8], rdx      ; node->previous = list->last
+    mov [rax + 8], rdx         ; node->previous = list->last
 
     ; list->last = node
     mov [r15 + 8], rax
@@ -143,19 +141,22 @@ string_proc_list_concat_asm:
     push r14
     push r13
     push r12
-    push rbx        ; Añadido: guardar rbx en la pila
+    push rbx                   ; Guardar rbx en la pila
     mov rbp, rsp
-    sub rsp, 8      ; alineación para llamadas
+    sub rsp, 8                 ; alineación para llamadas
 
     ; Guardamos argumentos
-    mov r15, rdi            ; list
-    mov r14b, sil           ; type (uint8_t)
-    mov r13, rdx            ; hash externo
+    mov r15, rdi               ; list
+    movzx r14, sil             ; type (uint8_t) con zero-extension
+    mov r13, rdx               ; hash externo
 
     ; malloc(1)
     mov rdi, 1
-    call malloc             ; rax = new_hash
-    mov r12, rax            ; r12 = new_hash
+    call malloc                ; rax = new_hash
+    mov r12, rax               ; r12 = new_hash
+
+    test r12, r12              ; Verificar que malloc no devolvió NULL
+    je .return_null
 
     ; new_hash[0] = '\0'
     mov byte [r12], 0
@@ -168,8 +169,8 @@ string_proc_list_concat_asm:
     je .check_hash
 
     ; if (current_node->type == type)
-    mov al, byte [rbx + 16]
-    cmp al, r14b
+    movzx eax, byte [rbx + 16] ; cargar type del nodo con zero-extension
+    cmp al, r14b               ; comparar con type que buscamos
     jne .next_node
 
     ; str_concat(new_hash, current_node->hash)
@@ -185,7 +186,7 @@ string_proc_list_concat_asm:
     mov r12, rax
 
 .next_node:
-    mov rbx, [rbx]
+    mov rbx, [rbx]             ; current_node = current_node->next
     jmp .loop
 
 .check_hash:
@@ -206,9 +207,19 @@ string_proc_list_concat_asm:
 
 .done:
     mov rax, r12
-
     add rsp, 8
-    pop rbx         ; Añadido: restaurar rbx de la pila
+    pop rbx
+    pop r12
+    pop r13
+    pop r14
+    pop r15
+    pop rbp
+    ret
+
+.return_null:                  ; Añadido manejo de error si malloc falla
+    mov rax, NULL
+    add rsp, 8
+    pop rbx
     pop r12
     pop r13
     pop r14
