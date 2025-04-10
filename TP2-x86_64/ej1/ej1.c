@@ -18,6 +18,9 @@ string_proc_node* string_proc_node_create(uint8_t type, char* hash){
 		printf("Error: No se pudo crear el nodo\n");
 		return NULL;
 	}
+	if (hash == NULL){
+		return NULL;
+	}
 	node->next= NULL;
 	node->previous= NULL;
 	node->type = type;

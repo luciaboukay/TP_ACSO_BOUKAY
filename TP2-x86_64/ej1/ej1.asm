@@ -50,11 +50,15 @@ string_proc_node_create_asm:
     movzx r15, dil         ; r15 = type (uint8_t)
     mov r14, rsi           ; r14 = hash (char*)
     
+    ; Verificar si hash es NULL
+    test r14, r14
+    jz .return_null        ; Si hash es NULL, retornar NULL
+    
     ; malloc(sizeof(string_proc_node)) - 32 bytes
     mov rdi, 32
     call malloc
     test rax, rax
-    je .return_null         
+    jz .return_null        ; Si malloc devolvió NULL, retornar NULL
 
     ; Inicializar campos
     mov qword [rax], NULL      ; node->next = NULL
@@ -74,7 +78,7 @@ string_proc_node_create_asm:
     pop r15
     pop rbp
     ret
-
+    
 string_proc_list_add_node_asm:
     push rbp
     push r15
