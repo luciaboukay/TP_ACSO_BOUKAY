@@ -1,7 +1,6 @@
 #include "ej1.h"
 
 string_proc_list* string_proc_list_create(void){
-	/* Crea una lista vacia */
 	string_proc_list* list = (string_proc_list*)malloc(sizeof(string_proc_list));
 	if(list == NULL){
 		printf("Error: No se pudo crear la lista\n");
@@ -45,11 +44,19 @@ void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash)
 }
 
 char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash){
+	if (list == NULL){
+		printf("Error: No se pudo crear la lista\n");
+		return NULL;
+	}
 	string_proc_node* current_node = list->first;
-	char* new_hash = (char*)malloc(1);
+	char* new_hash = (char*)malloc(sizeof(char) * 1);
+	if (new_hash == NULL) {
+		printf("Error: malloc fallo\n");
+		return NULL;
+	}
 	new_hash[0] = '\0';
 	while(current_node != NULL){
-		if(current_node->type == type){
+		if(current_node->type == type && current_node->hash != NULL){
 			char* temp = str_concat(new_hash, current_node->hash);
 			free(new_hash);
 			new_hash = temp;
@@ -63,7 +70,6 @@ char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash)
 	}
 	return new_hash;
 }
-
 
 /** AUX FUNCTIONS **/
 

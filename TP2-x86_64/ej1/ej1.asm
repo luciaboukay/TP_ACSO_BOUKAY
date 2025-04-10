@@ -78,7 +78,7 @@ string_proc_node_create_asm:
     pop r15
     pop rbp
     ret
-    
+
 string_proc_list_add_node_asm:
     push rbp
     push r15
@@ -131,70 +131,78 @@ string_proc_list_concat_asm:
     push r14
     push r13
     push r12
-    push rbx                ; guardar rbx (callee-saved)
+    push rbx
     mov rbp, rsp
     sub rsp, 8              ; alineación para llamadas
-    
+
     ; Guardar argumentos
     mov r15, rdi            ; r15 = list
     movzx r14, sil          ; r14 = type (uint8_t)
     mov r13, rdx            ; r13 = hash externo
-    
+
+    ; Verificar si list es NULL
+    test r15, r15
+    je .return_null
+
     ; malloc(1) para new_hash inicial
     mov rdi, 1
     call malloc
     mov r12, rax            ; r12 = new_hash
-    
+
     test r12, r12           ; verificar si malloc falló
     je .return_null
-    
+
     ; Inicializar new_hash[0] = '\0'
     mov byte [r12], 0
-    
+
     ; current_node = list->first
     mov rbx, [r15]          ; rbx = list->first
-    
+
 .loop:
     test rbx, rbx
-    je .check_hash          ; Si no hay más nodos, salir del bucle
-    
+    je .check_hash          ; fin de la lista
+
     ; Verificar si current_node->type == type
     movzx eax, byte [rbx + 16]
     cmp al, r14b
     jne .next_node
-    
+
+    ; Verificar si current_node->hash es NULL
+    mov rsi, [rbx + 24]
+    test rsi, rsi
+    je .next_node
+
     ; str_concat(new_hash, current_node->hash)
     mov rdi, r12
-    mov rsi, [rbx + 24]
     call str_concat
-    
+
     ; free(new_hash)
     mov rdi, r12
     call free
-    
+
     ; new_hash = resultado de str_concat
     mov r12, rax
-    
+
 .next_node:
     mov rbx, [rbx]          ; current_node = current_node->next
     jmp .loop
-    
+
 .check_hash:
     test r13, r13
-    je .done                ; Si hash externo es NULL, terminar
-    
+    je .done                ; si hash externo es NULL, terminar
+
     ; str_concat(hash, new_hash)
     mov rdi, r13
     mov rsi, r12
     call str_concat
-    
+
     ; free(new_hash)
     mov rdi, r12
     call free
-    
+
     ; new_hash = resultado de str_concat
     mov r12, rax
-    
+
 .done:
     mov rax, r12            ; return new_hash
     add rsp, 8
@@ -207,7 +215,7 @@ string_proc_list_concat_asm:
     ret
 
 .return_null:
-    mov rax, NULL
+    mov rax, 0
     add rsp, 8
     pop rbx
     pop r12
