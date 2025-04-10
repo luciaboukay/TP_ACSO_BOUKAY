@@ -47,7 +47,7 @@ string_proc_node_create_asm:
     mov rbp, rsp
     
     ; Guardar argumentos
-    movzx r15, dil         ; r15 = type (uint8_t)
+    mov r15, rdi           ; r15 = type (uint8_t)
     mov r14, rsi           ; r14 = hash (char*)
     
     ; Verificar si hash es NULL
@@ -89,11 +89,15 @@ string_proc_list_add_node_asm:
     
     ; Guardar argumentos
     mov r15, rdi            ; r15 = list
-    movzx r14, sil          ; r14 = type (uint8_t)
+    mov r14, rsi            ; r14 = type (uint8_t)
     mov r13, rdx            ; r13 = hash
+
+    ; Verificar si list es NULL
+    test r15, r15
+    je .return_null
     
     ; Llamar a string_proc_node_create(type, hash)
-    mov dil, r14b           ; primer arg: type
+    mov rdi, r14            ; primer arg: type
     mov rsi, r13            ; segundo arg: hash
     call string_proc_node_create_asm
     
@@ -137,7 +141,7 @@ string_proc_list_concat_asm:
 
     ; Guardar argumentos
     mov r15, rdi            ; r15 = list
-    movzx r14, sil          ; r14 = type (uint8_t)
+    mov r14, rsi            ; r14 = type (uint8_t)
     mov r13, rdx            ; r13 = hash externo
 
     ; Verificar si list es NULL
@@ -168,12 +172,13 @@ string_proc_list_concat_asm:
     jne .next_node
 
     ; Verificar si current_node->hash es NULL
-    mov rsi, [rbx + 24]
-    test rsi, rsi
+    mov rax, [rbx + 24]     ; rax = current_node->hash
+    test rax, rax
     je .next_node
 
     ; str_concat(new_hash, current_node->hash)
-    mov rdi, r12
+    mov rdi, r12            ; primer argumento
+    mov rsi, rax            ; segundo argumento
     call str_concat
 
     ; free(new_hash)
