@@ -209,8 +209,8 @@ string_proc_list_concat_asm:
     jz .next_node
     
     ; Verificar que new_hash no es NULL
-    ; test r14, r14
-    ; jz .concat_fail
+    test r14, r14
+    jz .concat_fail
     
     ; Llamar a str_concat(new_hash, current_node->hash)
     mov rdi, r14         ; primer parámetro: new_hash
