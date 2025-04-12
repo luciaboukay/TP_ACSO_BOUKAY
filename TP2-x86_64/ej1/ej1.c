@@ -28,6 +28,10 @@ string_proc_node* string_proc_node_create(uint8_t type, char* hash){
 }
 
 void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash){
+	if (list == NULL){
+		printf("Error: No se pudo crear la lista\n");
+		return;
+	}
 	string_proc_node* node = string_proc_node_create(type, hash);
 	if(node == NULL){
 		printf("Error: No se pudo crear el nodo\n");
