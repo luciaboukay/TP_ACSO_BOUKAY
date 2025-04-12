@@ -150,7 +150,7 @@ string_proc_list_add_node_asm:
     pop r12
     pop rbp
     ret
-    
+
 string_proc_list_concat_asm:
     ; Prologue
     push rbp
@@ -161,9 +161,12 @@ string_proc_list_concat_asm:
     push r14
     push r15
 
+    ; Initialize return value to NULL
+    xor r14, r14
+
     ; Save parameters
     mov rbx, rdi       ; list
-    movzx r12d, sil    ; type (zero-extend to avoid potential issues)
+    mov r12b, sil      ; type (store as byte)
     mov r13, rdx       ; prefix hash
 
     ; Check for NULL list
@@ -180,69 +183,84 @@ string_proc_list_concat_asm:
 
     ; Start with first node
     mov r15, [rbx]      ; current = list->first
+    test r15, r15
+    jz .apply_prefix
 
 .node_loop:
-    ; Check if current node is NULL
-    test r15, r15
-    jz .prefix_handling
-
-    ; Check type match - Compare the correct byte
-    movzx eax, byte [r15+16]  ; current->type (offset might need adjustment)
-    cmp eax, r12d             ; Compare with requested type
+    ; Check type match
+    mov al, byte [r15+16]  ; current->type
+    cmp al, r12b
     jne .next_node
 
     ; Get current node's hash
     mov rsi, [r15+24]   ; current->hash
-    test rsi, rsi       ; Check if hash is NULL
+    test rsi, rsi
     jz .next_node
 
-    ; Concatenate: result = str_concat(accumulated, current->hash)
-    mov rdi, r14        ; accumulated string
+    ; Verify we have an accumulator
+    test r14, r14
+    jz .next_node
+
+    ; Concatenate strings
+    mov rdi, r14        ; current accumulator
     call str_concat
-    test rax, rax       ; Check if concatenation failed
+    test rax, rax
     jz .concat_fail
 
-    ; Replace old string with new concatenated one
+    ; Replace old string with new one
     mov rdi, r14
     mov r14, rax
     call free
 
 .next_node:
+    ; Move to next node
     mov r15, [r15]      ; current = current->next
-    jmp .node_loop
+    test r15, r15
+    jnz .node_loop
 
-.prefix_handling:
-    ; Apply prefix if provided
+.apply_prefix:
+    ; Check if we need to add prefix
     test r13, r13
     jz .return_result
 
-    ; Concatenate: result = str_concat(prefix, accumulated)
+    ; Verify we have something to prepend to
+    test r14, r14
+    jz .create_prefix_copy
+
+    ; Concatenate prefix with accumulated string
     mov rdi, r13        ; prefix
     mov rsi, r14        ; accumulated string
     call str_concat
     test rax, rax
     jz .concat_fail
 
-    ; Free the old accumulated string
+    ; Replace accumulated string
     mov rdi, r14
     mov r14, rax
     call free
+    jmp .return_result
 
-.return_result:
-    mov rax, r14
-    jmp .end
+.create_prefix_copy:
+    ; Special case: no matches but has prefix - return copy of prefix
+    mov rdi, r13
+    call strdup         ; Ensure you have strdup implemented
+    mov r14, rax
+    jmp .return_result
 
 .concat_fail:
-    ; Cleanup if concatenation failed
+    ; Cleanup on failure
     test r14, r14
     jz .return_null
     mov rdi, r14
     call free
 
 .return_null:
-    xor eax, eax
+    xor r14, r14
 
-.end:
+.return_result:
+    mov rax, r14
+
+    ; Epilogue
     pop r15
     pop r14
     pop r13
