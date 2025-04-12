@@ -211,10 +211,6 @@ string_proc_list_concat_asm:
     mov rdi, r14         ; primer parámetro: new_hash
     mov rsi, rax         ; segundo parámetro: current_node->hash
     call str_concat
-
-    ; Verificar si str_concat devolvió NULL
-    test rax, rax
-    jz .concat_fail
     
     ; Liberar el antiguo new_hash
     mov rdi, r14
@@ -235,23 +231,12 @@ string_proc_list_concat_asm:
     mov rdi, r13         ; primer parámetro: hash
     mov rsi, r14         ; segundo parámetro: new_hash
     call str_concat
-    
-    ; Verificar si str_concat devolvió NULL
-    test rax, rax
-    jz .concat_fail
 
     ; Liberar el antiguo new_hash
     mov rdi, r14
     mov r14, rax         ; guardar el nuevo puntero
     call free
     jmp .return_result
-    
-.concat_fail:
-    ; Limpiar memoria si hubo un fallo
-    test r14, r14
-    jz .return_null
-    mov rdi, r14
-    call free
     
 .return_null:
     xor eax, eax        ; Devolver NULL
