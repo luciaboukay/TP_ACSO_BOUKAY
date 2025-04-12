@@ -151,14 +151,6 @@ string_proc_list_add_node_asm:
     pop rbp
     ret
 
-; string_proc_list_concat_asm:
-;   Concatenates all hashes of nodes with matching type
-;   Parameters:
-;     rdi - list pointer
-;     sil - type to match
-;     rdx - hash prefix (optional)
-;   Returns:
-;     rax - concatenated string (caller must free), or NULL on failure
 string_proc_list_concat_asm:
     ; Prólogo de función
     push rbp
@@ -171,7 +163,7 @@ string_proc_list_concat_asm:
     
     ; Guardar parámetros
     mov rbx, rdi       ; list
-    movzx r12d, sil    ; type
+    movzx r12d, sil    ; type (must zero extend to 32 bits)
     mov r13, rdx       ; hash prefix
     
     ; Verificar si list es NULL
@@ -181,98 +173,79 @@ string_proc_list_concat_asm:
     ; Asignar memoria para new_hash (1 byte para el string vacío con '\0')
     mov rdi, 1
     call malloc
-    
-    ; Verificar si malloc falló
     test rax, rax
     jz .return_null
     
     ; Inicializar new_hash como string vacío
     mov byte [rax], 0     ; new_hash[0] = '\0'
-    mov r14, rax          ; r14 = new_hash
+    mov r14, rax          ; r14 = new_hash (accumulator)
     
     ; Inicializar current_node = list->first
-    mov r15, [rbx]        ; r15 = list->first (current_node)
+    mov r15, [rbx]        ; r15 = current_node
     
 .loop_start:
-    ; Verificar si current_node es NULL
-    test r15, r15
+    test r15, r15         ; Check if current_node == NULL
     jz .loop_end
     
-    ; Verificar si el tipo coincide (current_node->type == type)
-    movzx eax, byte [r15+16]
+    ; Check if node->type matches our type
+    movzx eax, byte [r15+16]  ; node->type
     cmp eax, r12d
     jne .next_node
     
-    ; Verificar si current_node->hash es NULL
-    mov rax, [r15+24]    ; rax = current_node->hash
-    test rax, rax
+    ; Get node->hash
+    mov rdi, [r15+24]     ; node->hash
+    test rdi, rdi         ; Check if hash is NULL
     jz .next_node
     
-    ; Verificar que new_hash no es NULL
-    test r14, r14
-    jz .concat_fail
-    
-    ; Llamar a str_concat(new_hash, current_node->hash)
-    mov rdi, r14         ; primer parámetro: new_hash
-    mov rsi, rax         ; segundo parámetro: current_node->hash
+    ; Concatenate: r14 = str_concat(r14, node->hash)
+    mov rsi, rdi          ; node->hash
+    mov rdi, r14          ; current accumulator
     call str_concat
-    
-    ; Verificar si str_concat devolvió NULL
-    test rax, rax
+    test rax, rax         ; Check if str_concat failed
     jz .concat_fail
     
-    ; Liberar el antiguo new_hash
+    ; Free old string and update accumulator
     mov rdi, r14
-    mov r14, rax         ; guardar el nuevo puntero
+    mov r14, rax          ; new string
     call free
-    jmp .next_node
     
 .next_node:
-    ; Avanzar al siguiente nodo: current_node = current_node->next
-    mov r15, [r15]
+    mov r15, [r15]        ; current_node = current_node->next
     jmp .loop_start
     
 .loop_end:
-    ; Verificar si hash prefix es NULL
-    test r13, r13
+    ; Check if we need to prepend the prefix
+    test r13, r13         ; Check if prefix is NULL
     jz .return_result
     
-    ; Verificar que new_hash no es NULL
-    test r14, r14
-    jz .concat_fail
-    
-    ; Llamar a str_concat(hash_prefix, new_hash)
-    mov rdi, r13         ; primer parámetro: hash prefix
-    mov rsi, r14         ; segundo parámetro: new_hash
+    ; Concatenate: r14 = str_concat(prefix, r14)
+    mov rdi, r13          ; prefix
+    mov rsi, r14          ; accumulated string
     call str_concat
-    
-    ; Verificar si str_concat devolvió NULL
     test rax, rax
     jz .concat_fail
     
-    ; Liberar el antiguo new_hash
+    ; Free old accumulated string
     mov rdi, r14
-    mov r14, rax         ; guardar el nuevo puntero
+    mov r14, rax          ; new string
     call free
     jmp .return_result
     
 .concat_fail:
-    ; Limpiar memoria si hubo un fallo
+    ; Cleanup if concatenation failed
     test r14, r14
     jz .return_null
     mov rdi, r14
     call free
     
 .return_null:
-    xor eax, eax        ; Devolver NULL
+    xor eax, eax
     jmp .end
     
 .return_result:
-    ; Preparar el valor de retorno
     mov rax, r14
     
 .end:
-    ; Epílogo de función
     pop r15
     pop r14
     pop r13
