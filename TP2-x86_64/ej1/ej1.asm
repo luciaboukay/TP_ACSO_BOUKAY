@@ -207,10 +207,18 @@ string_proc_list_concat_asm:
     cmp al, r12b
     jne .next_node
     
+    ; Obtener el hash del nodo
+    mov rsi, [r15+24]     ; Acceder al puntero hash del nodo
+    test rsi, rsi         ; Verificar si el hash es NULL
+    jz .next_node         ; Si es NULL, pasar al siguiente nodo
+    
     ; Llamar a str_concat(new_hash, current_node->hash)
-    mov rdi, r14         ; primer parámetro: new_hash
-    mov rsi, [r15+24]         ; segundo parámetro: current_node->hash
+    mov rdi, r14          ; primer parámetro: new_hash
     call str_concat
+    
+    ; Verificar si str_concat falló
+    test rax, rax
+    jz .return_null
     
     ; Liberar el antiguo new_hash
     mov rdi, r14
@@ -231,6 +239,10 @@ string_proc_list_concat_asm:
     mov rdi, r13         ; primer parámetro: hash
     mov rsi, r14         ; segundo parámetro: new_hash
     call str_concat
+    
+    ; Verificar si str_concat falló
+    test rax, rax
+    jz .return_null
 
     ; Liberar el antiguo new_hash
     mov rdi, r14
@@ -239,6 +251,13 @@ string_proc_list_concat_asm:
     jmp .return_result
     
 .return_null:
+    ; Si llegamos aquí, liberamos new_hash si existe
+    test r14, r14
+    jz .return_null_directly
+    mov rdi, r14
+    call free
+    
+.return_null_directly:
     xor eax, eax        ; Devolver NULL
     jmp .end
 
@@ -256,7 +275,3 @@ string_proc_list_concat_asm:
     pop rbx
     pop rbp
     ret
-
-
-
-
