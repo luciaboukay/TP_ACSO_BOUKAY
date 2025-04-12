@@ -209,7 +209,7 @@ string_proc_list_concat_asm:
     
     ; Llamar a str_concat(new_hash, current_node->hash)
     mov rdi, r14         ; primer parámetro: new_hash
-    mov rsi, rax         ; segundo parámetro: current_node->hash
+    mov rsi, [r15+24]         ; segundo parámetro: current_node->hash
     call str_concat
     
     ; Liberar el antiguo new_hash
