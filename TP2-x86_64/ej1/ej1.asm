@@ -152,115 +152,118 @@ string_proc_list_add_node_asm:
     ret
 
 string_proc_list_concat_asm:
-    ; Prologue - preserve all non-volatile registers we'll use
+    ; Prólogo de función
     push rbp
     mov rbp, rsp
-    push rbx
+    push rbx           ; Preservar registros callee-saved
     push r12
     push r13
     push r14
     push r15
-
-    ; Initialize return value to NULL
-    xor r14, r14
-
-    ; Save parameters in non-volatile registers
-    mov rbx, rdi       ; list pointer (preserved)
-    mov r12b, sil      ; type (store as byte)
-    mov r13, rdx       ; prefix hash (preserved)
-
-    ; Validate list pointer
+    sub rsp, 8         ; Alinear la pila a 16 bytes 
+    
+    ; Guardar parámetros
+    mov rbx, rdi       ; list
+    movzx r12d, sil    ; type (extendido a 32 bits)
+    mov r13, rdx       ; hash
+    
+    ; Verificar si list es NULL
     test rbx, rbx
-    jz .cleanup
+    jnz .list_valid
 
-    ; Create initial empty string (with null terminator)
+    ; Si list es NULL, devolver NULL
+    xor eax, eax
+    jmp .end
+
+.list_valid:
+
+    ; Asignar memoria para new_hash (1 byte para el string vacío con '\0')
     mov rdi, 1
     call malloc
+    
+    ; Verificar si malloc falló
     test rax, rax
-    jz .cleanup
-    mov byte [rax], 0
-    mov r14, rax        ; r14 = accumulated string
+    jnz .malloc_success
+    
+    ; Si malloc falló, devolver NULL
+    xor eax, eax
+    jmp .end
 
-    ; Load first node carefully
-    mov r15, [rbx]      ; current_node = list->first
+.malloc_success:
+    ; Inicializar new_hash como string vacío
+    mov byte [rax], 0     ; new_hash[0] = '\0'
+    mov r14, rax          ; r14 = new_hash
+    
+    ; Inicializar current_node = list->first
+    mov r15, [rbx]        ; r15 = list->first (current_node)
+    
+.loop_start:
+    ; Verificar si current_node es NULL
     test r15, r15
-    jz .apply_prefix
-
-.traversal_loop:
-    ; Verify node type matches
-    mov al, byte [r15+16]  ; node->type
+    jz .loop_end
+    
+    ; Verificar si el tipo coincide (current_node->type == type)
+    movzx eax, byte [r15+16]
     cmp al, r12b
     jne .next_node
-
-    ; Safely get node->hash
-    mov rsi, [r15+24]   ; node->hash
-    test rsi, rsi
-    jz .next_node
-
-    ; Validate we have an accumulator
-    test r14, r14
-    jz .next_node
-
-    ; Perform concatenation: r14 = str_concat(r14, node->hash)
-    mov rdi, r14
+    
+    ; Llamar a str_concat(new_hash, current_node->hash)
+    mov rdi, r14         ; primer parámetro: new_hash
+    mov rsi, rax         ; segundo parámetro: current_node->hash
     call str_concat
+
+    ; Verificar si str_concat devolvió NULL
     test rax, rax
-    jz .concatenation_failed
-
-    ; Replace old string with new one
+    jz .concat_fail
+    
+    ; Liberar el antiguo new_hash
     mov rdi, r14
-    mov r14, rax
+    mov r14, rax         ; guardar el nuevo puntero
     call free
-
+    
 .next_node:
-    ; Move to next node with safety check
-    mov r15, [r15]      ; node = node->next
-    test r15, r15
-    jnz .traversal_loop
-
-.apply_prefix:
-    ; Handle prefix if provided
+    ; Avanzar al siguiente nodo: current_node = current_node->next
+    mov r15, [r15]
+    jmp .loop_start
+    
+.loop_end:
+    ; Verificar si hash es NULL
     test r13, r13
-    jz .prepare_result
-
-    ; Special case: empty result but has prefix
-    test r14, r14
-    jz .copy_prefix_only
-
-    ; Normal case: concat prefix + accumulated
-    mov rdi, r13
-    mov rsi, r14
+    jz .return_result
+    
+    ; Llamar a str_concat(hash, new_hash)
+    mov rdi, r13         ; primer parámetro: hash
+    mov rsi, r14         ; segundo parámetro: new_hash
     call str_concat
+    
+    ; Verificar si str_concat devolvió NULL
     test rax, rax
-    jz .concatenation_failed
+    jz .concat_fail
 
-    ; Replace accumulated string
+    ; Liberar el antiguo new_hash
     mov rdi, r14
-    mov r14, rax
+    mov r14, rax         ; guardar el nuevo puntero
     call free
-    jmp .prepare_result
-
-.copy_prefix_only:
-    ; Just return a copy of the prefix
-    mov rdi, r13
-    call strdup
-    mov r14, rax
-    jmp .prepare_result
-
-.concatenation_failed:
-    ; Cleanup on failure
+    jmp .return_result
+    
+.concat_fail:
+    ; Limpiar memoria si hubo un fallo
     test r14, r14
-    jz .cleanup
+    jz .return_null
     mov rdi, r14
     call free
-    xor r14, r14
-    jmp .cleanup
+    
+.return_null:
+    xor eax, eax        ; Devolver NULL
+    jmp .end
 
-.prepare_result:
+.return_result:
+    ; Preparar el valor de retorno
     mov rax, r14
-
-.cleanup:
-    ; Epilogue - restore all non-volatile registers
+    
+.end:
+    ; Epílogo de función
+    add rsp, 8          ; Restaurar espacio reservado
     pop r15
     pop r14
     pop r13
@@ -268,3 +271,7 @@ string_proc_list_concat_asm:
     pop rbx
     pop rbp
     ret
+
+
+
+
