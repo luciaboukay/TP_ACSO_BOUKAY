@@ -152,7 +152,7 @@ string_proc_list_add_node_asm:
     ret
 
 string_proc_list_concat_asm:
-    ; Prologue
+    ; Prologue - preserve all non-volatile registers we'll use
     push rbp
     mov rbp, rsp
     push rbx
@@ -164,48 +164,48 @@ string_proc_list_concat_asm:
     ; Initialize return value to NULL
     xor r14, r14
 
-    ; Save parameters
-    mov rbx, rdi       ; list
+    ; Save parameters in non-volatile registers
+    mov rbx, rdi       ; list pointer (preserved)
     mov r12b, sil      ; type (store as byte)
-    mov r13, rdx       ; prefix hash
+    mov r13, rdx       ; prefix hash (preserved)
 
-    ; Check for NULL list
+    ; Validate list pointer
     test rbx, rbx
-    jz .return_null
+    jz .cleanup
 
-    ; Create initial empty string
+    ; Create initial empty string (with null terminator)
     mov rdi, 1
     call malloc
     test rax, rax
-    jz .return_null
+    jz .cleanup
     mov byte [rax], 0
     mov r14, rax        ; r14 = accumulated string
 
-    ; Start with first node
-    mov r15, [rbx]      ; current = list->first
+    ; Load first node carefully
+    mov r15, [rbx]      ; current_node = list->first
     test r15, r15
     jz .apply_prefix
 
-.node_loop:
-    ; Check type match
-    mov al, byte [r15+16]  ; current->type
+.traversal_loop:
+    ; Verify node type matches
+    mov al, byte [r15+16]  ; node->type
     cmp al, r12b
     jne .next_node
 
-    ; Get current node's hash
-    mov rsi, [r15+24]   ; current->hash
+    ; Safely get node->hash
+    mov rsi, [r15+24]   ; node->hash
     test rsi, rsi
     jz .next_node
 
-    ; Verify we have an accumulator
+    ; Validate we have an accumulator
     test r14, r14
     jz .next_node
 
-    ; Concatenate strings
-    mov rdi, r14        ; current accumulator
+    ; Perform concatenation: r14 = str_concat(r14, node->hash)
+    mov rdi, r14
     call str_concat
     test rax, rax
-    jz .concat_fail
+    jz .concatenation_failed
 
     ; Replace old string with new one
     mov rdi, r14
@@ -213,54 +213,54 @@ string_proc_list_concat_asm:
     call free
 
 .next_node:
-    ; Move to next node
-    mov r15, [r15]      ; current = current->next
+    ; Move to next node with safety check
+    mov r15, [r15]      ; node = node->next
     test r15, r15
-    jnz .node_loop
+    jnz .traversal_loop
 
 .apply_prefix:
-    ; Check if we need to add prefix
+    ; Handle prefix if provided
     test r13, r13
-    jz .return_result
+    jz .prepare_result
 
-    ; Verify we have something to prepend to
+    ; Special case: empty result but has prefix
     test r14, r14
-    jz .create_prefix_copy
+    jz .copy_prefix_only
 
-    ; Concatenate prefix with accumulated string
-    mov rdi, r13        ; prefix
-    mov rsi, r14        ; accumulated string
+    ; Normal case: concat prefix + accumulated
+    mov rdi, r13
+    mov rsi, r14
     call str_concat
     test rax, rax
-    jz .concat_fail
+    jz .concatenation_failed
 
     ; Replace accumulated string
     mov rdi, r14
     mov r14, rax
     call free
-    jmp .return_result
+    jmp .prepare_result
 
-.create_prefix_copy:
-    ; Special case: no matches but has prefix - return copy of prefix
+.copy_prefix_only:
+    ; Just return a copy of the prefix
     mov rdi, r13
-    call strdup         ; Ensure you have strdup implemented
+    call strdup
     mov r14, rax
-    jmp .return_result
+    jmp .prepare_result
 
-.concat_fail:
+.concatenation_failed:
     ; Cleanup on failure
     test r14, r14
-    jz .return_null
+    jz .cleanup
     mov rdi, r14
     call free
-
-.return_null:
     xor r14, r14
+    jmp .cleanup
 
-.return_result:
+.prepare_result:
     mov rax, r14
 
-    ; Epilogue
+.cleanup:
+    ; Epilogue - restore all non-volatile registers
     pop r15
     pop r14
     pop r13
