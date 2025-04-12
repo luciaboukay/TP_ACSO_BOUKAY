@@ -222,9 +222,9 @@ string_proc_list_concat_asm:
     jz .concat_fail
     
     ; Liberar el antiguo new_hash
-    mov rdi, r14
-    mov r14, rax         ; guardar el nuevo puntero
+    mov rdi, r14         ; liberar el string anterior
     call free
+    mov r14, rax         ; guardar el nuevo string concatenado
     jmp .next_node
     
 .next_node:
