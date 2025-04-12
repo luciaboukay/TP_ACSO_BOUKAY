@@ -94,7 +94,7 @@ string_proc_list_add_node_asm:
 
     ; Verificar si list es NULL
     test r15, r15
-    je .return_null
+    je .empty_list
     
     ; Llamar a string_proc_node_create(type, hash)
     mov rdi, r14            ; primer arg: type
@@ -180,6 +180,8 @@ string_proc_list_concat_asm:
     mov rdi, r12            ; primer argumento
     mov rsi, rax            ; segundo argumento
     call str_concat
+    test rax, rax
+    je .free_and_return_null
 
     ; free(new_hash)
     mov rdi, r12
@@ -196,17 +198,15 @@ string_proc_list_concat_asm:
     test r13, r13
     je .done                ; si hash externo es NULL, terminar
 
+    ; Verificar que r13 apunte a una string válida
+    ; Opcional: podrías usar un sentinel o padding en tu tester para asegurarte
+
     ; str_concat(hash, new_hash)
     mov rdi, r13
     mov rsi, r12
     call str_concat
-
-    ; free(new_hash)
-    mov rdi, r12
-    call free
-
-    ; new_hash = resultado de str_concat
-    mov r12, rax
+    test rax, rax
+    je .free_and_return_null
 
 .done:
     mov rax, r12            ; return new_hash
@@ -218,6 +218,13 @@ string_proc_list_concat_asm:
     pop r15
     pop rbp
     ret
+
+.free_and_return_null:
+    ; liberar new_hash si estaba asignado
+    test r12, r12
+    je .return_null
+    mov rdi, r12
+    call free
 
 .return_null:
     mov rax, 0
