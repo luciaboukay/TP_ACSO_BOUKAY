@@ -150,7 +150,7 @@ string_proc_list_add_node_asm:
     pop r12
     pop rbp
     ret
-
+    
 string_proc_list_concat_asm:
     ; Prologue
     push rbp
@@ -180,26 +180,23 @@ string_proc_list_concat_asm:
 
     ; Start with first node
     mov r15, [rbx]      ; current = list->first
-    test r15, r15       ; Check if first node is NULL
-    jz .prefix_handling
 
 .node_loop:
     ; Check if current node is NULL
     test r15, r15
     jz .prefix_handling
 
-    ; Check type match - using movzx to properly handle byte comparison
-    movzx eax, byte [r15+16]  ; current->type
-    cmp eax, r12d             ; compare with extended type
+    ; Check type match - Compare the correct byte
+    movzx eax, byte [r15+16]  ; current->type (offset might need adjustment)
+    cmp eax, r12d             ; Compare with requested type
     jne .next_node
 
     ; Get current node's hash
-    mov rdi, [r15+24]   ; current->hash
-    test rdi, rdi       ; Check if hash is NULL
+    mov rsi, [r15+24]   ; current->hash
+    test rsi, rsi       ; Check if hash is NULL
     jz .next_node
 
     ; Concatenate: result = str_concat(accumulated, current->hash)
-    mov rsi, rdi        ; current->hash
     mov rdi, r14        ; accumulated string
     call str_concat
     test rax, rax       ; Check if concatenation failed
@@ -219,7 +216,7 @@ string_proc_list_concat_asm:
     test r13, r13
     jz .return_result
 
-    ; Concatenate prefix: result = str_concat(prefix, accumulated)
+    ; Concatenate: result = str_concat(prefix, accumulated)
     mov rdi, r13        ; prefix
     mov rsi, r14        ; accumulated string
     call str_concat
