@@ -60,7 +60,7 @@ char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash)
 	}
 	new_hash[0] = '\0';
 	while(current_node != NULL){
-		if(current_node->type == type && current_node->hash != NULL){
+		if(current_node->type == type){
 			char* temp = str_concat(new_hash, current_node->hash);
 			free(new_hash);
 			new_hash = temp;
