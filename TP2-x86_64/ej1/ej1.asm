@@ -55,7 +55,7 @@ string_proc_node_create_asm:
     jz .return_null
 
     ; Guardar parametros
-    mov byte r15, dil
+    mov byte r15, rdi
     mov qword r14, rsi
     
     ; Llamar a malloc para crear el nodo
