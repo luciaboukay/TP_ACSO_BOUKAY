@@ -47,19 +47,19 @@ string_proc_node_create_asm:
     ; Prólogo de función
     push rbp
     mov rbp, rsp
-    push r15
-    push r14
+    push rbx        ; Type
+    push r12        ; Hash
     
     ; Verificar si hash es NULL primero
     test rsi, rsi
     jz .return_null
 
-    ; Guardar parametros
-    mov byte r15, rdi
-    mov qword r14, rsi
+    ; Guardar parámetros
+    mov bl, dil      ; type (byte) - parte baja de rdi
+    mov r12, rsi     ; hash (64-bit pointer)
     
     ; Llamar a malloc para crear el nodo
-    mov rdi, 32       ; sizeof(string_proc_node) = 32 bytes (3 punteros + uint8_t + padding)
+    mov rdi, 32      ; sizeof(string_proc_node)
     call malloc
     
     ; Verificar si malloc falló
@@ -69,8 +69,9 @@ string_proc_node_create_asm:
     ; Inicializar campos del nodo
     mov qword [rax], NULL     ; node->next = NULL
     mov qword [rax+8], NULL   ; node->previous = NULL
-    mov byte [rax+16], r15    ; node->type = type
-    mov qword [rax+24], r14   ; node->hash = hash
+    mov byte [rax+16], bl     ; node->type = type (usamos bl)
+    mov qword [rax+24], r12   ; node->hash = hash
+    
     jmp .end
     
 .return_null:
@@ -78,8 +79,8 @@ string_proc_node_create_asm:
     
 .end:
     ; Epílogo de función
-    pop r14
-    pop r15
+    pop r12
+    pop rbx
     pop rbp
     ret
 
