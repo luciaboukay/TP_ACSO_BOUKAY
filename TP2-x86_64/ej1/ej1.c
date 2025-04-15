@@ -3,7 +3,6 @@
 string_proc_list* string_proc_list_create(void){
 	string_proc_list* list = (string_proc_list*)malloc(sizeof(string_proc_list));
 	if(list == NULL){
-		printf("Error: No se pudo crear la lista\n");
 		return NULL;
 	}
 	list->first = NULL;
@@ -14,7 +13,6 @@ string_proc_list* string_proc_list_create(void){
 string_proc_node* string_proc_node_create(uint8_t type, char* hash){
 	string_proc_node* node = (string_proc_node*)malloc(sizeof(string_proc_node));
 	if(node == NULL){
-		printf("Error: No se pudo crear el nodo\n");
 		return NULL;
 	}
 	if (hash == NULL){
@@ -29,12 +27,10 @@ string_proc_node* string_proc_node_create(uint8_t type, char* hash){
 
 void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash){
 	if (list == NULL){
-		printf("Error: No se pudo crear la lista\n");
 		return;
 	}
 	string_proc_node* node = string_proc_node_create(type, hash);
 	if(node == NULL){
-		printf("Error: No se pudo crear el nodo\n");
 		return;
 	}
 	if(list->first == NULL){
@@ -49,16 +45,14 @@ void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash)
 
 char* string_proc_list_concat(string_proc_list* list, uint8_t type , char* hash){
 	if (list == NULL){
-		printf("Error: No se pudo crear la lista\n");
 		return NULL;
 	}
-	string_proc_node* current_node = list->first;
 	char* new_hash = (char*)malloc(sizeof(char) * 1);
 	if (new_hash == NULL) {
-		printf("Error: malloc fallo\n");
 		return NULL;
 	}
 	new_hash[0] = '\0';
+	string_proc_node* current_node = list->first;
 	while(current_node != NULL){
 		if(current_node->type == type){
 			char* temp = str_concat(new_hash, current_node->hash);

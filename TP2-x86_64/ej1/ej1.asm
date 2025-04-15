@@ -23,7 +23,7 @@ string_proc_list_create_asm:
     mov rbp, rsp
     
     ; Llamar a malloc para crear la lista
-    mov rdi, 16       ; sizeof(string_proc_list) = 16 bytes (2 punteros de 8 bytes)
+    mov rdi, 16       ; sizeof(string_proc_list)
     call malloc
     
     ; Verificar si malloc falló
@@ -109,9 +109,9 @@ string_proc_list_add_node_asm:
     jz .return_null
     
     ; Guardar el puntero al nodo creado
-    mov r15, rax       ; node
+    mov r15, rax       
     
-    ; Verificar si la lista está vacía (list->first == NULL)
+    ; Verificar si la lista está vacía
     cmp qword [r12], NULL
     jne .list_not_empty
     
@@ -160,8 +160,8 @@ string_proc_list_concat_asm:
     test rbx, rbx
     jz .return_null
 
-    ; Asignar memoria para new_hash (1 byte para el string vacío con '\0')
-    mov rdi, 1
+    ; Asignar memoria para new_hash
+    mov rdi, 1         ; sizeof(char)
     call malloc
     
     ; Verificar si malloc falló
@@ -172,17 +172,17 @@ string_proc_list_concat_asm:
     mov byte [rax], 0     ; new_hash[0] = '\0'
     mov r14, rax          ; r14 = new_hash
     
-    ; Inicializar current_node = list->first
-    mov r15, [rbx]        ; r15 = list->first (current_node)
+    ; Inicializar current_node
+    mov r15, [rbx]        ; r15 = list->first
     
 .loop_start:
     ; Verificar si current_node es NULL
     test r15, r15
     jz .loop_end
     
-    ; Verificar si el tipo coincide (current_node->type == type)
+    ; Verificar si el tipo coincide
     mov al, byte [r15+16]
-    cmp al, r12b
+    cmp al, r12b              ; current_node->type == type
     jne .next_node
     
     ; Llamar a str_concat(new_hash, current_node->hash)
@@ -196,8 +196,8 @@ string_proc_list_concat_asm:
     call free
     
 .next_node:
-    ; Avanzar al siguiente nodo: current_node = current_node->next
-    mov r15, [r15]
+    ; Avanzar al siguiente nodo
+    mov r15, [r15]       ; current_node = current_node->next
     jmp .loop_start
     
 .loop_end:
