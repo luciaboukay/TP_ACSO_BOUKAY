@@ -52,7 +52,7 @@ string_proc_node_create_asm:
     jz .return_null
 
     ; Guardar parámetros
-    mov rbx, rdi      ; type
+    mov bl, dil      ; type
     mov r12, rsi     ; hash
     
     ; Llamar a malloc para crear el nodo
@@ -66,7 +66,7 @@ string_proc_node_create_asm:
     ; Inicializar el nodo
     mov qword [rax], NULL     ; node->next = NULL
     mov qword [rax+8], NULL   ; node->previous = NULL
-    mov byte [rax+16], rbx     ; node->type = type
+    mov byte [rax+16], bl     ; node->type = type
     mov qword [rax+24], r12   ; node->hash = hash
     
     jmp .end
