@@ -1,0 +1,34 @@
+Lucia Boukay
+lboukay@udesa.edu.ar
+
+Texto phase_1:
+La fase 1 compara dos strings y explota en caso de que estos no sean iguales. Es por eso que con el gdb antes de que entre a la
+funcion strings_not_equal imprimi los dos parametros, presentes en rdi y rsi. En rdi se encuentra el input que yo ingrese y en rsi el string
+con el cual se compara. Luego, use el string de rsi como input para que, al ser iguales, no se realice el salto a explode_bomb.
+
+El input es: Junta esperencia en la vida  Porque nada ensenha tanto Como el sufrir y el llorar
+
+Texto phase_2:
+La fase 2 recibe como input 3 numeros, realiza la operacion xor entre los primeros dos y despues hace un desplazamiento a derecha,
+que es equivalente a dividir por 2. Luego, el resultado de estas operaciones debe ser igual al tercer numero. Mas aun, en misterio se 
+verifica que el resultado de la operacion sea negativo y realiza un salto si la flag de signo esta prendida, evitando la llamada a explode_bomb.
+
+El input es: 3 -5 -4
+
+Elijo estos numeros porque 3 xor -5 = -8 /2 = -4
+    00000000 00000000 00000000 00000011
+xor 
+    11111111 11111111 11111111 11111011
+=
+    11111111 11111111 11111111 11111000
+>> 1
+=
+    11111111 11111111 11111111 11111100 
+
+Texto phase 3:
+
+desopinar 7
+
+Texto phase 4:
+
+mmmmmo
