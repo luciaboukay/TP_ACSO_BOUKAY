@@ -129,7 +129,7 @@ string_proc_list_add_node_asm:
     jmp .end
     
 .return_null:
-    xor rax, rax            ; Return FALSE
+    xor rax, rax            ; Return NULL
     
 .end:
     ; Epílogo de función
@@ -144,7 +144,7 @@ string_proc_list_concat_asm:
     ; Prólogo de función
     push rbp
     mov rbp, rsp
-    push rbx           ; Preservar registros callee-saved
+    push rbx
     push r12
     push r13
     push r14
@@ -153,18 +153,12 @@ string_proc_list_concat_asm:
     
     ; Guardar parámetros
     mov rbx, rdi       ; list
-    movzx r12d, sil    ; type (extendido a 32 bits)
+    mov r12d, sil      ; type
     mov r13, rdx       ; hash
     
     ; Verificar si list es NULL
     test rbx, rbx
-    jnz .list_valid
-
-    ; Si list es NULL, devolver NULL
-    xor eax, eax
-    jmp .end
-
-.list_valid:
+    jz .return_null
 
     ; Asignar memoria para new_hash (1 byte para el string vacío con '\0')
     mov rdi, 1
@@ -228,7 +222,7 @@ string_proc_list_concat_asm:
     jmp .return_result
     
 .return_null:
-    xor eax, eax        ; Devolver NULL
+    xor rax, rax        ; Devolver NULL
     jmp .end
 
 .return_result:
