@@ -29,6 +29,9 @@ void string_proc_list_add_node(string_proc_list* list, uint8_t type, char* hash)
 	if (list == NULL){
 		return;
 	}
+	if (hash == NULL){
+		return;
+	}
 	string_proc_node* node = string_proc_node_create(type, hash);
 	if(node == NULL){
 		return;
