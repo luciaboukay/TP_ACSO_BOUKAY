@@ -97,7 +97,7 @@ string_proc_list_add_node_asm:
     
     ; Verificar si list es NULL
     test r12, r12
-    jz .error_end
+    jz .return_null
     
     ; Llamar a string_proc_node_create_asm(type, hash)
     mov rdi, rsi       ; type
@@ -106,7 +106,7 @@ string_proc_list_add_node_asm:
     
     ; Verificar si la creación del nodo falló
     test rax, rax
-    jz .error_end
+    jz .return_null
     
     ; Guardar el puntero al nodo creado
     mov r15, rax       ; node
@@ -118,7 +118,7 @@ string_proc_list_add_node_asm:
     ; Si la lista está vacía
     mov [r12], r15          ; list->first = node
     mov [r12+8], r15        ; list->last = node
-    jmp .success
+    jmp .end
     
 .list_not_empty:
     ; Si la lista no está vacía
@@ -126,13 +126,10 @@ string_proc_list_add_node_asm:
     mov [rax], r15          ; list->last->next = node
     mov [r15+8], rax        ; node->previous = list->last
     mov [r12+8], r15        ; list->last = node
-    
-.success:
-    mov rax, TRUE           ; Return TRUE
     jmp .end
     
-.error_end:
-    xor eax, eax            ; Return FALSE
+.return_null:
+    xor rax, rax            ; Return FALSE
     
 .end:
     ; Epílogo de función
