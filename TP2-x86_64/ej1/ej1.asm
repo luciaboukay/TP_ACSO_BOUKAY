@@ -166,13 +166,8 @@ string_proc_list_concat_asm:
     
     ; Verificar si malloc falló
     test rax, rax
-    jnz .malloc_success
+    jz .return_null
     
-    ; Si malloc falló, devolver NULL
-    xor eax, eax
-    jmp .end
-
-.malloc_success:
     ; Inicializar new_hash como string vacío
     mov byte [rax], 0     ; new_hash[0] = '\0'
     mov r14, rax          ; r14 = new_hash
@@ -186,12 +181,12 @@ string_proc_list_concat_asm:
     jz .loop_end
     
     ; Verificar si el tipo coincide (current_node->type == type)
-    movzx eax, byte [r15+16]
+    mov al, byte [r15+16]
     cmp al, r12b
     jne .next_node
     
     ; Llamar a str_concat(new_hash, current_node->hash)
-    mov rdi, r14         ; primer parámetro: new_hash
+    mov rdi, r14              ; primer parámetro: new_hash
     mov rsi, [r15+24]         ; segundo parámetro: current_node->hash
     call str_concat
     
@@ -231,7 +226,7 @@ string_proc_list_concat_asm:
     
 .end:
     ; Epílogo de función
-    add rsp, 8          ; Restaurar espacio reservado
+    add rsp, 8         
     pop r15
     pop r14
     pop r13
