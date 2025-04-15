@@ -28,15 +28,12 @@ string_proc_list_create_asm:
     
     ; Verificar si malloc falló
     test rax, rax
-    jz .return_null
+    jz .end
     
     ; Inicializar la lista
     mov qword [rax], NULL    ; list->first = NULL
     mov qword [rax+8], NULL  ; list->last = NULL
     jmp .end
-    
-.return_null:
-    xor eax, eax      ; Devolver NULL
     
 .end:
     ; Epílogo de función
@@ -47,16 +44,16 @@ string_proc_node_create_asm:
     ; Prólogo de función
     push rbp
     mov rbp, rsp
-    push rbx        ; Type
-    push r12        ; Hash
+    push rbx        
+    push r12        
     
-    ; Verificar si hash es NULL primero
+    ; Verificar si hash es NULL
     test rsi, rsi
     jz .return_null
 
     ; Guardar parámetros
-    mov bl, dil      ; type (byte) - parte baja de rdi
-    mov r12, rsi     ; hash (64-bit pointer)
+    mov bl, dil      ; type
+    mov r12, rsi     ; hash
     
     ; Llamar a malloc para crear el nodo
     mov rdi, 32      ; sizeof(string_proc_node)
@@ -66,10 +63,10 @@ string_proc_node_create_asm:
     test rax, rax
     jz .return_null
     
-    ; Inicializar campos del nodo
+    ; Inicializar el nodo
     mov qword [rax], NULL     ; node->next = NULL
     mov qword [rax+8], NULL   ; node->previous = NULL
-    mov byte [rax+16], bl     ; node->type = type (usamos bl)
+    mov byte [rax+16], bl     ; node->type = type
     mov qword [rax+24], r12   ; node->hash = hash
     
     jmp .end
