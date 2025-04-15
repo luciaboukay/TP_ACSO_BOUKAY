@@ -30,7 +30,7 @@ string_proc_list_create_asm:
     test rax, rax
     jz .return_null
     
-    ; Inicializar campos de la lista
+    ; Inicializar la lista
     mov qword [rax], NULL    ; list->first = NULL
     mov qword [rax+8], NULL  ; list->last = NULL
     jmp .end
@@ -40,7 +40,7 @@ string_proc_list_create_asm:
     
 .end:
     ; Epílogo de función
-    leave
+    pop rbp
     ret
 
 string_proc_node_create_asm:
