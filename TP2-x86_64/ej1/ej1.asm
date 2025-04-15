@@ -153,7 +153,7 @@ string_proc_list_concat_asm:
     
     ; Guardar parámetros
     mov rbx, rdi       ; list
-    mov r12d, sil      ; type
+    mov r12b, sil      ; type
     mov r13, rdx       ; hash
     
     ; Verificar si list es NULL
