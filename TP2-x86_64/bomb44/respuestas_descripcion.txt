@@ -1,0 +1,44 @@
+Lucia Boukay
+lboukay@udesa.edu.ar
+
+Texto phase_1:
+La fase 1 compara dos strings y explota en caso de que estos no sean iguales. Es por eso que con el gdb antes de que entre a la
+funcion strings_not_equal imprimi los dos parametros, presentes en rdi y rsi. En rdi se encuentra el input que yo ingrese y en rsi el string
+con el cual se compara. Luego, use el string de rsi como input para que, al ser iguales, no se realice el salto a explode_bomb.
+
+El input es: Junta esperencia en la vida  Porque nada ensenha tanto Como el sufrir y el llorar
+
+Texto phase_2:
+La fase 2 recibe como input 3 numeros, realiza la operacion xor entre los primeros dos y despues hace un desplazamiento a derecha,
+que es equivalente a dividir por 2. Luego, el resultado de estas operaciones debe ser igual al tercer numero. Mas aun, en misterio se 
+verifica que el resultado de la operacion sea negativo y realiza un salto si la flag de signo esta prendida, evitando la llamada a explode_bomb.
+
+El input es: 3 -5 -4
+
+Elijo estos numeros porque 3 xor -5 = -8 /2 = -4
+    00000000 00000000 00000000 00000011
+xor 
+    11111111 11111111 11111111 11111011
+=
+    11111111 11111111 11111111 11111000
+>> 1
+=
+    11111111 11111111 11111111 11111100 
+
+Texto phase_3:
+La fase 3 recibe como input una palabra y un numero. Dentro de cuenta, se realiza una busqueda binaria de la palabra ingresada en un arreglo que 
+fue cargado desde memoria, tal que la cantidad de veces que se compara si la palabra del indice actual es la ingresada debe ser mayor que 6 y
+menor o igual que 11. Luego, al ingresar a cuenta, veo que el registro rcx contiene el ultimo indice del arreglo, que es 10783. Mediante el calculo
+arbitrario de un indice (simulando una busqueda binaria), obtuve que haciendo 7 "comparaciones" un indice posible era 4127. Entonces,
+accedi al arreglo, el cual se pasa como parametro en el regitro rsi en la posicion 4127 y obtuve la palabra "desopinar".
+
+El input es: desopinar 7
+
+Texto phase_4:
+La fase 4 recibe un input de exactamente 6 caracteres e itera sobre los caracteres. En rsi se carga un arreglo donde para cada indice (que viene de
+la operacion entre el ASCII del caracter and 0xF) hay un valor asociado. Luego, se necesita que la suma de los valores para cada caracter del input
+sea igual a 0x31=49. Analizando los valores para cada caracter, selecciono una combinacion arbitraria que cumple esta condicion. El caracter m
+esta en el indice 13 del arreglo y su valor es 8, y el caracter o esta en el indice 15 del arreglo y su valor es 9. Luego "mmmmmo" tiene como valor
+total 8*5+9=49
+
+El input es: mmmmmo
