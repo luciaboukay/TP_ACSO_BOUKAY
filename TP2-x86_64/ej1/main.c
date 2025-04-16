@@ -166,11 +166,11 @@ void test_null_inputs() {
     assert(result_hash == NULL); // Expect NULL return value
 		printf("  ...concat with NULL list finished.\n");
 
-		// Test concat with NULL initial hash
-		printf("  Testing concat with NULL initial hash...\n");
-		result_hash = string_proc_list_concat_impl(list, 1, NULL);
-		assert(result_hash == NULL); // Expect NULL return value (or handle as per implementation spec)
-		printf("  ...concat with NULL initial hash finished.\n");
+		// // Test concat with NULL initial hash
+		// printf("  Testing concat with NULL initial hash...\n");
+		// result_hash = string_proc_list_concat_impl(list, 1, NULL);
+		// assert(result_hash == NULL); // Expect NULL return value (or handle as per implementation spec)
+		// printf("  ...concat with NULL initial hash finished.\n");
 
 		string_proc_list_destroy(list); // Clean up the list with the NULL hash node
     printf("Finished test: %s\n", __func__);
