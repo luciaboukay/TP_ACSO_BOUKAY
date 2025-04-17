@@ -30,9 +30,10 @@ La fase 3 recibe como input una palabra y un numero. Dentro de cuenta, se realiz
 fue cargado desde memoria, tal que la cantidad de veces que se compara si la palabra del indice actual es la ingresada debe ser mayor que 6 y
 menor o igual que 11. Luego, al ingresar a cuenta, veo que el registro rcx contiene el ultimo indice del arreglo, que es 10783. Mediante el calculo
 arbitrario de un indice (simulando una busqueda binaria), obtuve que haciendo 7 "iteraciones" un indice posible era 4127. Entonces,
-accedi al arreglo, el cual se pasa como parametro a cuenta en el regitro rsi en la posicion 4127 y obtuve la palabra "desopinar".
+accedi al arreglo, el cual se pasa como parametro a cuenta en el regitro rsi en la posicion 4127 y obtuve la palabra "desopinar". Al final del input
+agrego abrete_sesamo para acceder a la fase secreta de la bomba.
 
-El input es: desopinar 7
+El input es: desopinar 7 abrete_sesamo
 
 Texto phase_4:
 La fase 4 recibe un input de exactamente 6 caracteres e itera sobre los caracteres. En rsi se carga un arreglo donde para cada indice (que viene de
@@ -42,3 +43,12 @@ esta en el indice 13 del arreglo y su valor es 8, y el caracter 'o' esta en el i
 total 8*5+9=49
 
 El input es: mmmmmo
+
+Texto secret_phase:
+La fase secreta recibe como input un numero y verifica que sea ≤ 1001. Luego llama a la función recursiva fun7 con ese número y un puntero a la raiz de 
+un arbol binario de forma recursiva. Como para que no se llame a explode_bomb el resultado de fun7 tiene que ser 2, busque con el gdb un input tal que:
+como el nodo raiz es 36, pongo un input menor a este, despues como caigo en el nodo 8, pongo un valor mayor a este. Dado que en este punto la funcion recursiva
+devolveria 2, veo con el gdb que el valor del nodo que necesito para hacer que retorne es 22 (registo rdi depues de mov rdi,QWORD PTR [rdi+0x10] imprime 
+0x4f9250 <n32>: 0x00000016)
+
+El input es 22
