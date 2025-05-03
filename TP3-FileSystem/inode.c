@@ -78,28 +78,56 @@ int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum
             return 0; // Return 0 for sparse file blocks beyond the file's allocated blocks
         }
     } else {
-        // For large files:
-        // First check if we're accessing a direct block
-        if (blockNum < 7) {
-            return inp->i_addr[blockNum];
-        }
-        // Next check if we're accessing blocks through the indirect block
-        else if (blockNum < 256) {
-            // Need to read the indirect block
-            uint16_t indirectBlock[256]; // 256 block pointers in a 512-byte block
+        // Check if we're accessing one of the indirect blocks
+        if (blockNum < 7 * 256) {
+            // Calculate which indirect block and which entry in that block
+            int indirectBlockIndex = blockNum / 256;
+            int indirectEntryIndex = blockNum % 256;
             
             // Check if the indirect block pointer is valid
-            if (inp->i_addr[7] == 0) {
+            if (inp->i_addr[indirectBlockIndex] == 0) {
                 return 0; // Block doesn't exist (sparse file)
             }
             
             // Read the indirect block
-            if (diskimg_readsector(fs->dfd, inp->i_addr[7], indirectBlock) == -1) {
+            uint16_t indirectBlock[256]; // 256 block pointers in a 512-byte block
+            if (diskimg_readsector(fs->dfd, inp->i_addr[indirectBlockIndex], indirectBlock) == -1) {
                 return -1;
             }
             
             // Return the block number from the indirect block
-            return indirectBlock[blockNum - 7];
+            return indirectBlock[indirectEntryIndex];
+        } 
+        // Check if we're accessing the double indirect block
+        else if (blockNum < 7 * 256 + 256 * 256) {
+            // Calculate which entry in the double indirect block and which entry in that indirect block
+            int doubleIndirectEntry = (blockNum - 7 * 256) / 256;
+            int indirectEntryIndex = (blockNum - 7 * 256) % 256;
+            
+            // Check if the double indirect block pointer is valid
+            if (inp->i_addr[7] == 0) {
+                return 0; // Block doesn't exist (sparse file)
+            }
+            
+            // Read the double indirect block
+            uint16_t doubleIndirectBlock[256];
+            if (diskimg_readsector(fs->dfd, inp->i_addr[7], doubleIndirectBlock) == -1) {
+                return -1;
+            }
+            
+            // Check if the pointer to the indirect block is valid
+            if (doubleIndirectBlock[doubleIndirectEntry] == 0) {
+                return 0; // Block doesn't exist (sparse file)
+            }
+            
+            // Read the indirect block
+            uint16_t indirectBlock[256];
+            if (diskimg_readsector(fs->dfd, doubleIndirectBlock[doubleIndirectEntry], indirectBlock) == -1) {
+                return -1;
+            }
+            
+            // Return the block number from the indirect block
+            return indirectBlock[indirectEntryIndex];
         } else {
             // Block number out of range for large files
             return 0; // Return 0 for sparse file blocks beyond the file's allocated blocks
