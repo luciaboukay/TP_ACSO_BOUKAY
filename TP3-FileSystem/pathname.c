@@ -11,27 +11,28 @@
  * TODO
  */
 int pathname_lookup(struct unixfilesystem *fs, const char *pathname) {
+    // Validar los inputs
     if (fs == NULL || pathname == NULL) {
         return -1;
     }
 
-    // Handle root directory case
-    if (strcmp(pathname, "/") == 0) {
-        return ROOT_INUMBER;
-    }
-
-    // Verify it's an absolute path
+    // Verificar que el pathname comience con '/'
     if (pathname[0] != '/') {
         return -1;
     }
 
-    // Start from root directory
+    // Caso del directorio raíz
+    if (strcmp(pathname, "/") == 0) {
+        return ROOT_INUMBER;
+    }
+
+    // Empezar la búsqueda desde el directorio raíz
     int current_inumber = ROOT_INUMBER;
-    char component[14+1]; // Max 14 chars + null terminator
-    const char *start = pathname + 1; // Skip leading '/'
+    char component[14+1]; 
+    const char *start = pathname + 1;
     
     while (*start != '\0') {
-        // Extract next path component
+        // Encontrar el siguiente separador '/'
         const char *end = start;
         while (*end != '/' && *end != '\0') {
             end++;
@@ -39,26 +40,30 @@ int pathname_lookup(struct unixfilesystem *fs, const char *pathname) {
 
         size_t length = end - start;
         if (length == 0) {
-            return -1; // Empty component (e.g., "foo//bar")
+            return -1; // Componente vacío
         }
         if (length > 14) {
-            return -1; // Component too long
+            return -1; // Componente mas largo que 14 caracteres
         }
 
-        // Copy component (null-terminated)
+        // Copiar el componente
         strncpy(component, start, length);
         component[length] = '\0';
 
-        // Look up component in current directory
+        // Buscar el componente en el directorio actual
         struct direntv6 dirEnt;
         if (directory_findname(fs, component, current_inumber, &dirEnt) != 0) {
-            return -1; // Component not found
+            return -1;
         }
 
         current_inumber = dirEnt.d_inumber;
         
-        // Move to next component
-        start = (*end == '/') ? end + 1 : end;
+        // Mover al siguiente componente
+        if (*end == '/'){
+            start = end + 1;
+        } else {
+            start = end;
+        }
     }
 
     return current_inumber;

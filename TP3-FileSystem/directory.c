@@ -11,63 +11,64 @@
  */
 int directory_findname(struct unixfilesystem *fs, const char *name,
                       int dirinumber, struct direntv6 *dirEnt) {
-    // Validate inputs
+
+    // Validar los inputs
     if (fs == NULL || name == NULL || dirEnt == NULL) {
         return -1;
     }
 
-    // Check name length (Unix v6 max filename is 14 chars)
+    // Chequear el largo del nombre
     size_t namelen = strlen(name);
     if (namelen > sizeof(dirEnt->d_name)) {
         return -1;
     }
 
-    // Get the directory inode
-    struct inode in;
-    if (inode_iget(fs, dirinumber, &in) < 0) {
+    // Obtener el inodo del directorio
+    struct inode inode;
+    if (inode_iget(fs, dirinumber, &inode) < 0) {
         return -1;
     }
 
-    // Verify it's a directory
-    if ((in.i_mode & IFMT) != IFDIR) {
+    // Verificar si el inodo es un directorio
+    if ((inode.i_mode & IFMT) != IFDIR) {
         return -1;
     }
 
-    // Get directory size
-    int dirsize = inode_getsize(&in);
+    // Obtener el tamaño del directorio
+    int dirsize = inode_getsize(&inode);
     if (dirsize <= 0) {
         return -1;
     }
 
-    // Calculate number of blocks in directory
+    // Calcular el número de bloques del directorio
     int numblocks = (dirsize + DISKIMG_SECTOR_SIZE - 1) / DISKIMG_SECTOR_SIZE;
 
-    // Read through all blocks of the directory
+    // Leer los bloques del directorio
     for (int blknum = 0; blknum < numblocks; blknum++) {
-        int blocknum = inode_indexlookup(fs, &in, blknum);
+        int blocknum = inode_indexlookup(fs, &inode, blknum);
         if (blocknum < 0) {
             return -1;
         }
         if (blocknum == 0) {
-            continue; // Sparse block
+            continue;
         }
 
-        // Read the directory block
+        // Leer el bloque del disco
         char block[DISKIMG_SECTOR_SIZE];
         if (diskimg_readsector(fs->dfd, blocknum, block) != DISKIMG_SECTOR_SIZE) {
             return -1;
         }
 
-        // Scan through all directory entries in this block
+        // Ver las entradas del directorio
         for (size_t offset = 0; offset < DISKIMG_SECTOR_SIZE; offset += sizeof(struct direntv6)) {
             struct direntv6 *current = (struct direntv6 *)(block + offset);
 
-            // Skip empty entries (inode number 0)
+            // Saltear entradas vacías
             if (current->d_inumber == 0) {
                 continue;
             }
 
-            // Compare names
+            // Comparar el nombre
             size_t current_namelen = strnlen(current->d_name, sizeof(current->d_name));
             if (current_namelen == sizeof(current->d_name)) {
                 if (namelen == sizeof(current->d_name) && 
@@ -85,6 +86,6 @@ int directory_findname(struct unixfilesystem *fs, const char *name,
         }
     }
 
-    // Name not found
+    // Nombre no encontrado
     return -1;
 }
