@@ -29,11 +29,6 @@ int directory_findname(struct unixfilesystem *fs, const char *name,
         return -1;
     }
 
-    // Verificar si el inodo está asignado
-    if ((inode.i_mode & IALLOC) == 0) {
-        return -1;
-    }
-
     // Verificar si el inodo es un directorio
     if ((inode.i_mode & IFMT) != IFDIR) {
         return -1;
