@@ -16,11 +16,6 @@ int file_getblock(struct unixfilesystem *fs, int inumber, int blockNum, void *bu
         return -1;
     }
 
-    // Verificar si el inodo esta asignado
-    if ((inode.i_mode & IALLOC) == 0) {
-        return -1;
-    }
-
     // Obtener el número de bloque físico correspondiente
     int sector = inode_indexlookup(fs, &inode, blockNum);
     if (sector <= 0) {
