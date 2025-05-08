@@ -37,6 +37,11 @@ int inode_iget(struct unixfilesystem *fs, int inumber, struct inode *inp) {
     struct inode *inodeBlock = (struct inode *)buffer;
     *inp = inodeBlock[offset];
 
+    if (inp->i_mode & IALLOC == 0) {
+        // El inodo no está asignado
+        return -1;
+    }
+
     return 0;
 }
 
