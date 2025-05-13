@@ -58,7 +58,7 @@ int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum
             return inp->i_addr[blockNum];
         } else {
             // Numero de bloque fuera de rango para archivos chicos
-            return 0;
+            return -1;
         }
     } else {
         // Archivos grandes
@@ -114,7 +114,7 @@ int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum
             return indirectBlock[indirectEntryIndex];
         } else {
             // Número de bloque fuera de rango para archivos grandes
-            return 0;
+            return -1;
         }
     }
 }
