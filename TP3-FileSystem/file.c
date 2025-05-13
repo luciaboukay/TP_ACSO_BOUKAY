@@ -31,6 +31,7 @@ int file_getblock(struct unixfilesystem *fs, int inumber, int blockNum, void *bu
     if (sector == -1) {
         // Bloque fuera de rango
         return -1;
+    }
 
     // Leer el bloque del disco
     if (diskimg_readsector(fs->dfd, sector, buf) == -1) {
