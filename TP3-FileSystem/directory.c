@@ -51,12 +51,12 @@ int directory_findname(struct unixfilesystem *fs, const char *name,
     // Leer los bloques del directorio
     for (int blknum = 0; blknum < numblocks; blknum++) {
         int blocknum = inode_indexlookup(fs, &inode, blknum);
-        if (blocknum < 0) {
+        if (blocknum == -1) {
             return -1;
         }
-        if (blocknum == 0) {
-            continue;
-        }
+        // if (blocknum == 0) {
+        //     continue;
+        // }
 
         // Leer el bloque del disco
         char block[DISKIMG_SECTOR_SIZE];

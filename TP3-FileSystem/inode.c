@@ -70,7 +70,7 @@ int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum
             
             // Chequear si el bloque indirecto esta asignado
             if (inp->i_addr[indirectBlockIndex] == 0) {
-                return 0;
+                return -1;
             }
             
             // Leer el bloque indirecto (son 256 punteros de bloque)
@@ -90,7 +90,7 @@ int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum
             
             // Chequear si el puntero de bloque doblemente indirecto esta asignado
             if (inp->i_addr[7] == 0) {
-                return 0;
+                return -1;
             }
             
             // Leer el bloque doblemente indirecto (son 256 punteros de bloque indirecto)
@@ -101,7 +101,7 @@ int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum
             
             // Chequear si el puntero de bloque indirecto esta asignado
             if (doubleIndirectBlock[doubleIndirectEntry] == 0) {
-                return 0;
+                return -1;
             }
             
             // Leer el bloque indirecto (son 256 punteros de bloque)

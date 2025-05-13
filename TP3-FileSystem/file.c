@@ -28,13 +28,9 @@ int file_getblock(struct unixfilesystem *fs, int inumber, int blockNum, void *bu
 
     // Obtener el número de bloque físico correspondiente
     int sector = inode_indexlookup(fs, &inode, blockNum);
-    if (sector == 1) {
+    if (sector == -1) {
         // Bloque fuera de rango
         return -1;
-    } else if (sector == 0) {
-        // Bloque no asignado
-        return 0; 
-    }
 
     // Leer el bloque del disco
     if (diskimg_readsector(fs->dfd, sector, buf) == -1) {
