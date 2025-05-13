@@ -9,6 +9,11 @@
  * TODO
  */
 int file_getblock(struct unixfilesystem *fs, int inumber, int blockNum, void *buf) {
+    // Validar los inputs
+    if (fs == NULL || buf == NULL || inumber <= 0 || blockNum < 0) {
+        return -1;
+    }
+
     struct inode inode;
 
     // Obtener el inode
@@ -23,8 +28,12 @@ int file_getblock(struct unixfilesystem *fs, int inumber, int blockNum, void *bu
 
     // Obtener el número de bloque físico correspondiente
     int sector = inode_indexlookup(fs, &inode, blockNum);
-    if (sector <= 0) {
+    if (sector == 1) {
+        // Bloque fuera de rango
         return -1;
+    } else if (sector == 0) {
+        // Bloque no asignado
+        return 0; 
     }
 
     // Leer el bloque del disco
