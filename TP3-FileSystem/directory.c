@@ -64,21 +64,11 @@ int directory_findname(struct unixfilesystem *fs, const char *name,
             if (current->d_inumber == 0) {
                 continue;
             }
-
-            // Comparar el nombre
-            size_t current_namelen = strnlen(current->d_name, sizeof(current->d_name));
-            if (current_namelen == sizeof(current->d_name)) {
-                if (namelen == sizeof(current->d_name) && 
-                    strncmp(current->d_name, name, sizeof(current->d_name)) == 0) {
-                    *dirEnt = *current;
-                    return 0;
-                }
-            } else {
-                if (namelen == current_namelen && 
-                    strcmp(current->d_name, name) == 0) {
-                    *dirEnt = *current;
-                    return 0;
-                }
+            
+            if (strncmp(current->d_name, name, sizeof(current->d_name)) == 0 &&
+                namelen == strnlen(current->d_name, sizeof(current->d_name))) {
+                *dirEnt = *current;
+                return 0;
             }
         }
     }
