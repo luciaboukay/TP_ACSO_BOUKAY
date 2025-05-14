@@ -57,12 +57,14 @@ int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum
         if (blockNum < 8) {
             return inp->i_addr[blockNum];
         } else {
-            // Numero de bloque fuera de rango para archivos chicos
+            // Numero de bloque fuera de rango
             return -1;
         }
     } else {
         // Archivos grandes
-        // Punteros de indireccion simple
+        // Punteros de indireccion simple 
+        // Tengo 7 punteros indirectos que apuntan a bloques de 256 punteros 
+        // La cantidad de punteros que entran en un bloque (512/2=256 donde el 2 viene de que son punteros de tipo uint16_t)
         if (blockNum < 7 * 256) {
             // Calcular el índice del bloque indirecto y el índice de entrada en ese bloque
             int indirectBlockIndex = blockNum / 256;
@@ -83,6 +85,7 @@ int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum
             return indirectBlock[indirectEntryIndex];
         } 
         // Punteros de doble indireccion
+        // Tengo 7 punteros indirectos simples y 1 doblemente indirecto, que son 256 punteros que apuntan a bloques de 256 punteros
         else if (blockNum < 7 * 256 + 256 * 256) {
             // Calcular el índice del bloque doblemente indirecto y el índice de entrada en ese bloque indirecto
             int doubleIndirectEntry = (blockNum - 7 * 256) / 256;
@@ -113,7 +116,7 @@ int inode_indexlookup(struct unixfilesystem *fs, struct inode *inp, int blockNum
             // Devolver el número de bloque del bloque indirecto
             return indirectBlock[indirectEntryIndex];
         } else {
-            // Número de bloque fuera de rango para archivos grandes
+            // Número de bloque fuera de rango
             return -1;
         }
     }

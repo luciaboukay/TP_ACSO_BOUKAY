@@ -16,7 +16,7 @@ int pathname_lookup(struct unixfilesystem *fs, const char *pathname) {
         return -1;
     }
 
-    // Verificar que el pathname comience con '/'
+    // Verificar que el pathname comience con /
     if (pathname[0] != '/') {
         return -1;
     }
@@ -32,24 +32,18 @@ int pathname_lookup(struct unixfilesystem *fs, const char *pathname) {
     const char *start = pathname + 1;
     
     while (*start != '\0') {
-        // // Encontrar el siguiente separador '/'
-        // const char *end = start;
-        // while (*end != '/' && *end != '\0') {
-        //     end++;
-        // }
-
-        // Encontrar el siguiente separador '/'
+        // Encontrar el siguiente /
         const char *end = strchr(start, '/');
         if (end == NULL) {
-            end = start + strlen(start); // Si no hay más '/', apunta al final de la cadena
+            end = start + strlen(start); // Si no hay mas es el final de la cadena
         }
 
         size_t length = end - start;
         if (length == 0) {
-            return -1; // Componente vacío
+            return -1; // Esta vacio
         }
         if (length > 14) {
-            return -1; // Componente mas largo que 14 caracteres
+            return -1; // Es mas largo que 14
         }
 
         // Copiar el componente
