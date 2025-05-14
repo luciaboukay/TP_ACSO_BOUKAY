@@ -64,7 +64,8 @@ int directory_findname(struct unixfilesystem *fs, const char *name,
             if (current->d_inumber == 0) {
                 continue;
             }
-            
+
+            // Comparar el nombre del directorio con el nombre buscado
             if (strncmp(current->d_name, name, sizeof(current->d_name)) == 0 &&
                 namelen == strnlen(current->d_name, sizeof(current->d_name))) {
                 *dirEnt = *current;

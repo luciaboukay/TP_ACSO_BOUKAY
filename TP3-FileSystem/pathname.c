@@ -32,10 +32,16 @@ int pathname_lookup(struct unixfilesystem *fs, const char *pathname) {
     const char *start = pathname + 1;
     
     while (*start != '\0') {
+        // // Encontrar el siguiente separador '/'
+        // const char *end = start;
+        // while (*end != '/' && *end != '\0') {
+        //     end++;
+        // }
+
         // Encontrar el siguiente separador '/'
-        const char *end = start;
-        while (*end != '/' && *end != '\0') {
-            end++;
+        const char *end = strchr(start, '/');
+        if (end == NULL) {
+            end = start + strlen(start); // Si no hay más '/', apunta al final de la cadena
         }
 
         size_t length = end - start;
