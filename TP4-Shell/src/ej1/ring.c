@@ -8,6 +8,7 @@ int main(int argc, char **argv) {
     int start, pid, n;
     int buffer[1];
 
+    // Validar los parametros
     if (argc != 4) {
         fprintf(stderr, "Uso: anillo <n> <c> <s>\n");
         exit(EXIT_FAILURE);
@@ -37,13 +38,13 @@ int main(int argc, char **argv) {
         }
     }
 
-    // Pipe padre -> hijo inicial (enviar el valor inicial)
+    // Pipe padre a hijo inicial (enviar el valor inicial)
     int parent_to_child[2];
     if (pipe(parent_to_child) == -1) {
         exit(EXIT_FAILURE);
     }
 
-    // Pipe hijo -> padre (recibir el resultado final)
+    // Pipe hijo a padre (recibir el resultado final)
     int child_to_parent[2];
     if (pipe(child_to_parent) == -1) {
         exit(EXIT_FAILURE);
@@ -123,6 +124,7 @@ int main(int argc, char **argv) {
     if (read(child_to_parent[0], buffer, sizeof(int)) != sizeof(int)) {
         exit(EXIT_FAILURE);
     }
+
     close(child_to_parent[0]);
 
     // Mostrar resultado final
