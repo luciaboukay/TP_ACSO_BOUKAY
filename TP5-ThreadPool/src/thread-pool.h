@@ -80,9 +80,9 @@ class ThreadPool {
     Semaphore taskSem;                      // semaphore to signal new tasks
     int activeTasks;                        // counter for active tasks
     mutex activeTasksMtx;                   // mutex for activeTasks counter
-    Semaphore waitSem;                      // semaphore to signal when all tasks are done
-    bool allTasksComplete;                  // flag to indicate if all tasks are complete
-  
+    condition_variable waitCV;              // condition variable for wait() method
+    Semaphore workerAvailable{0};           // semaphore to signal when workers become available
+
     /* ThreadPools are the type of thing that shouldn't be cloneable, since it's
     * not clear what it means to clone a ThreadPool (should copies of all outstanding
     * functions to be executed be copied?).

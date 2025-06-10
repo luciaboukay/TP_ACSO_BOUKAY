@@ -8,7 +8,7 @@
 using namespace std;
 
 ThreadPool::ThreadPool(size_t numThreads) : 
-    wts(numThreads), done(false), taskSem(0), activeTasks(0), waitSem(0), allTasksComplete(true) {
+    wts(numThreads), done(false), taskSem(0), activeTasks(0) {
     
     // Initialize workers
     for (size_t i = 0; i < numThreads; ++i) {
@@ -27,11 +27,10 @@ void ThreadPool::schedule(const function<void(void)>& thunk) {
         tasks.push(thunk);
     }
     
-    // Increment active tasks counter (separate lock)
+    // Increment active tasks counter
     {
         lock_guard<mutex> activeLg(activeTasksMtx);
         activeTasks++;
-        allTasksComplete = false; // Set flag to indicate tasks are pending
     }
     
     // Notify dispatcher that there's a new task
@@ -49,21 +48,22 @@ void ThreadPool::worker(int id) {
         // Execute the assigned task
         wts[id].thunk();
         
-        // Mark this worker as available again
+        // Mark this worker as available again and notify dispatcher
         {
             lock_guard<mutex> lg(wts[id].mtx);
             wts[id].available = true;
         }
+
+        workerAvailable.signal();
         
-        // Update the active tasks counter and signal if all tasks are complete
+        // Update the active tasks counter and notify waiting threads if needed
         {
-            lock_guard<mutex> activeLg(activeTasksMtx);
+            unique_lock<mutex> activeLg(activeTasksMtx);
             activeTasks--;
             
-            // If no active tasks remain, set the flag and signal waiting threads
+            // Use condition variable for wait() to prevent accumulation of signals and race conditions
             if (activeTasks == 0) {
-                allTasksComplete = true;
-                waitSem.signal();
+                waitCV.notify_all(); // Notify all threads waiting in wait()
             }
         }
     }
@@ -92,12 +92,13 @@ void ThreadPool::dispatcher() {
             }
         }
         
-        // If no task available, continue (this shouldn't happen normally)
+        // If no task available, continue
         if (!hasTask) continue;
         
-        // Find an available worker
+        // Wait for worker availability
         bool assigned = false;
         while (!assigned) {
+            // Try to find an available worker
             for (auto& wt : wts) {
                 lock_guard<mutex> lg(wt.mtx);
                 if (wt.available) {
@@ -109,9 +110,10 @@ void ThreadPool::dispatcher() {
                 }
             }
             
-            // If no worker available, yield and try again
+            // If no worker available, wait for one to become available
             if (!assigned) {
-                this_thread::yield();
+                // Wait for a worker to signal availability
+                workerAvailable.wait();
             }
         }
     }
@@ -122,37 +124,14 @@ void ThreadPool::dispatcher() {
     }
 }
 
-// void ThreadPool::wait() {
-//     while (true) {
-//         // Check if all tasks are done while holding the lock
-//         {
-//             lock_guard<mutex> activeLg(activeTasksMtx);
-//             if (activeTasks == 0) return;
-            
-//             // Reset semaphore to avoid spurious wakeups
-//             // (This is a simplified approach - a condition variable would be better)
-//         }
-        
-//         // Wait for completion signal
-//         waitSem.wait();
-        
-//         // After waking up, check again (loop will check activeTasks)
-//     }
-// }
-
 void ThreadPool::wait() {
-    while (true) {
-        {
-            // Check if all tasks are done while holding the lock
-            lock_guard<mutex> activeLg(activeTasksMtx);
-            if (allTasksComplete) return;
-        }
-        
-        waitSem.wait();
-        // After waking up, check again (loop will check activeTasks)
+    // Use condition variable with proper synchronization
+    unique_lock<mutex> activeLg(activeTasksMtx);
+    while (activeTasks > 0) {
+        waitCV.wait(activeLg); // Wait until activeTasks becomes 0
     }
+    // Lock is automatically released when function exits
 }
-
 
 ThreadPool::~ThreadPool() {
     // Wait for all currently scheduled tasks to complete
@@ -163,6 +142,9 @@ ThreadPool::~ThreadPool() {
     
     // Notify dispatcher to wake up and check done flag
     taskSem.signal();
+    
+    // Wake up dispatcher if it's waiting for workers
+    workerAvailable.signal();
     
     // Wait for dispatcher to finish
     if (dt.joinable()) dt.join();
