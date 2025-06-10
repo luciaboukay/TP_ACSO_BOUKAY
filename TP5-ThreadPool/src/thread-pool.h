@@ -14,6 +14,8 @@
 #include <functional>  // for the function template used in the schedule signature
 #include <thread>      // for thread
 #include <vector>      // for vector
+#include <queue>       // for queue
+#include <condition_variable> // for condition_variable
 #include "Semaphore.h" // for Semaphore
 
 using namespace std;
@@ -29,11 +31,11 @@ using namespace std;
  * worker to process.
  */
 typedef struct worker {
-    thread ts;
-    function<void(void)> thunk;
-    /**
-     * Complete the definition of the worker_t struct here...
-     **/
+    thread ts;                      // thread handle 
+    function<void(void)> thunk;     // task to execute
+    Semaphore sem{0};               // semaphore initialized to 0
+    bool available;                 // whether the worker is available
+    mutex mtx;                      // mutex to protect worker state
 } worker_t;
 
 class ThreadPool {
@@ -74,10 +76,12 @@ class ThreadPool {
     vector<worker_t> wts;                   // worker thread handles. you may want to change/remove this
     bool done;                              // flag to indicate the pool is being destroyed
     mutex queueLock;                        // mutex to protect the queue of tasks
-
-    /* It is incomplete, there should be more private variables to manage the structures... 
-    * *
-    */
+    queue<function<void(void)>> tasks;      // queue of tasks to execute
+    Semaphore taskSem;                      // semaphore to signal new tasks
+    int activeTasks;                        // counter for active tasks
+    mutex activeTasksMtx;                   // mutex for activeTasks counter
+    Semaphore waitSem;                      // semaphore to signal when all tasks are done
+    bool allTasksComplete;                  // flag to indicate if all tasks are complete
   
     /* ThreadPools are the type of thing that shouldn't be cloneable, since it's
     * not clear what it means to clone a ThreadPool (should copies of all outstanding
